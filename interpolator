@@ -201,16 +201,18 @@ class Interpolator(object):
         """Get the mean smb in elevation class ec"""
 
         if (ec == 0):
-            mean_lower = self._field_at_mean_topo[ec]
+            mean_lower = self._mean_value_lower(
+                ec, self._field_at_mean_topo[ec], 0)
         else:
-            mean_lower = self._field_at_mean_topo[ec] - \
-              self._mean_deviations[ec]*self._gradients[ec-1]
+            mean_lower = self._mean_value_lower(
+                ec, self._field_at_mean_topo[ec], self._gradients[ec-1])
 
         if (ec == self._nelev-1):
-            mean_upper = self._field_at_mean_topo[ec]
+            mean_upper = self._mean_value_upper(
+                ec, self._field_at_mean_topo[ec], 0)
         else:
-            mean_upper = self._field_at_mean_topo[ec] + \
-              self._mean_deviations[ec]*self._gradients[ec]
+            mean_upper = self._mean_value_upper(
+                ec, self._field_at_mean_topo[ec], self._gradients[ec])
 
         return (mean_lower + mean_upper)/2
 
@@ -219,22 +221,33 @@ class Interpolator(object):
         interpolation"""
 
         if (ec == 0):
-            mean_lower = self._field[ec]
+            mean_lower = self._mean_value_lower(
+                ec, self._field[ec], 0)
         else:
             glint_gradient = (self._field[ec] - self._field[ec-1]) / \
               (self._topo[ec] - self._topo[ec-1])
-            mean_lower = self._field[ec] - \
-              self._mean_deviations[ec]*glint_gradient
+            mean_lower = self._mean_value_lower(
+                ec, self._field[ec], glint_gradient)
 
         if (ec == self._nelev-1):
-            mean_upper = self._field[ec]
+            mean_upper = self._mean_value_upper(
+                ec, self._field[ec], 0)
         else:
             glint_gradient = (self._field[ec+1] - self._field[ec]) / \
               (self._topo[ec+1] - self._topo[ec])
-            mean_upper = self._field[ec] + \
-              self._mean_deviations[ec]*glint_gradient
+            mean_upper = self._mean_value_upper(
+                ec, self._field[ec], glint_gradient)
 
         return (mean_lower + mean_upper)/2
+
+    def _mean_value_upper(self, ec, field, gradient):
+        """Return the mean value for the upper side of an elevation class"""
+        return field + self._mean_deviations[ec]*gradient
+
+    def _mean_value_lower(self, ec, field, gradient):
+        """Return the mean value for the lower side of an elevation class"""
+        return field - self._mean_deviations[ec]*gradient
+
 
     def draw_figure(self, output_filename):
         """Draw a figure of this gradient info, and save it to
