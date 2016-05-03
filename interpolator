@@ -275,12 +275,12 @@ class Interpolator(object):
         label_mp = 'mean-preserving'
         for ec in range(self._nelev - 1):
             plt.plot([self._topo[ec], self._topo[ec+1]],
-                     [self._field[ec], self._field[ec+1]],
-                     'r', label=label_glint)
-            plt.plot([self._topo[ec], self._topo[ec+1]],
                      [self._field_at_mean_topo[ec],
                       self._field_at_mean_topo[ec+1]],
                      'b', label=label_mp)
+            plt.plot([self._topo[ec], self._topo[ec+1]],
+                     [self._field[ec], self._field[ec+1]],
+                     'r', label=label_glint)
             # Make sure each label only appears once
             label_glint = None
             label_mp = None
@@ -322,9 +322,14 @@ class Interpolator(object):
             else:
                 yloc = self._field[ec] - y_range/5
             num_format = "{:8.4f}"
+
+            # I have done some spot-checks to confirm that this mean agrees with
+            # self._field[ec]; if we implement this for real, we should add some
+            # unit tests and/or inline tests to confirm that
             plt.text(self._elevclass_bounds[ec], yloc,
                      num_format.format(self.get_mean(ec)),
                      fontsize=6, color='b')
+
             plt.text(self._elevclass_bounds[ec], yloc-y_range/20,
                      num_format.format(self.get_glint_mean(ec)),
                      fontsize=6, color='r')
