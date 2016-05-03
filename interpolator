@@ -323,12 +323,9 @@ class Interpolator(object):
                 yloc = self._field[ec] - y_range/5
             num_format = "{:8.4f}"
             plt.text(self._elevclass_bounds[ec], yloc,
-                     num_format.format(self._field[ec]),
-                     fontsize=6, color='k')
-            plt.text(self._elevclass_bounds[ec], yloc-y_range/20,
                      num_format.format(self.get_mean(ec)),
                      fontsize=6, color='b')
-            plt.text(self._elevclass_bounds[ec], yloc-y_range/10,
+            plt.text(self._elevclass_bounds[ec], yloc-y_range/20,
                      num_format.format(self.get_glint_mean(ec)),
                      fontsize=6, color='r')
 
