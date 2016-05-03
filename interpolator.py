@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.pylab as pylab
 
 class interpolator(object):
     def __init__(self, elevclass_bounds, topo, field, mean_deviations):
@@ -111,9 +113,88 @@ class interpolator(object):
         self._field_at_mean_topo = x[:self._nelev]
         self._gradients = x[self._nelev:]
 
+        # Sanity check: make sure that the gradients are truly the slope between
+        # adjacent points
+        for gradient_num in range(self._nelev-1):
+            np.testing.assert_approx_equal(self._gradients[gradient_num],
+                (self._field_at_mean_topo[gradient_num+1] -
+                self._field_at_mean_topo[gradient_num]) /
+                (self._topo[gradient_num+1] - self._topo[gradient_num]))
+
+
     def __str__(self):
         field_at_mean_topo_str = "Values at mean topo: " + str(self._field_at_mean_topo)
         gradient_str = "Gradients: " + str(self._gradients)
         return field_at_mean_topo_str + "\n" + gradient_str
 
 
+    def draw_figure(self, output_filename):
+        """Draw a figure of this gradient info, and save it to
+        output_filename"""
+
+        field_min = min(self._field)
+        field_max = max(self._field)
+
+        # Draw points
+        plt.plot(self._topo, self._field, 'ro')
+        plt.plot(self._topo, self._field_at_mean_topo, 'bo')
+
+        # Draw dashed lines at the clm-computed values
+        for ec in range(self._nelev):
+            plt.plot([self._elevclass_bounds[ec], self._elevclass_bounds[ec+1]],
+                     [self._field[ec], self._field[ec]], 'k--')
+
+        # Limit upper bound of top elevation class
+        upper_bound = min(self._elevclass_bounds[self._nelev],
+                          self._topo[self._nelev-1] +
+                          (self._topo[self._nelev-1] - self._elevclass_bounds[self._nelev-1]))
+
+        # Draw lines between points
+        label_glint = 'glint'
+        label_mp = 'mean-preserving'
+        for ec in range(self._nelev - 1):
+            plt.plot([self._topo[ec], self._topo[ec+1]],
+                     [self._field[ec], self._field[ec+1]],
+                     'r', label=label_glint)
+            plt.plot([self._topo[ec], self._topo[ec+1]],
+                     [self._field_at_mean_topo[ec],
+                      self._field_at_mean_topo[ec+1]],
+                     'b', label=label_mp)
+            # Make sure each label only appears once
+            label_glint = None
+            label_mp = None
+
+        # Draw gradient in lower half of lowest EC
+        plt.plot([self._elevclass_bounds[0], self._topo[0]],
+                 [self._field[0], self._field[0]], 'r')
+        plt.plot([self._elevclass_bounds[0], self._topo[0]],
+                 [self._field_at_mean_topo[0], self._field_at_mean_topo[0]], 'b')
+
+        # Draw gradient in upper half of highest EC
+        plt.plot([self._topo[-1], upper_bound],
+                 [self._field[-1], self._field[-1]], 'r')
+        plt.plot([self._topo[-1], upper_bound],
+                 [self._field_at_mean_topo[-1], self._field_at_mean_topo[-1]], 'b')
+
+        # Limit x axis
+        plt.xlim([self._elevclass_bounds[0], upper_bound])
+
+        # Set y axes ourselves, rather than letting them be dynamic, for easier
+        # comparison between figures
+        y_range = field_max - field_min
+        y_max = field_max + 0.2 * y_range
+        y_min = field_min - 0.2 * y_range
+        plt.ylim([y_min, y_max])
+
+        # Plot elevation class bounds - vertical lines
+        # (don't draw upper bound of last EC)
+        for ec_bound in self._elevclass_bounds[:-1]:
+            plt.plot([ec_bound, ec_bound], [y_min, y_max], 'k')
+
+        pylab.legend(loc='best', fontsize='x-small')
+        pylab.savefig(output_filename)
+        plt.close()
+
+        
+
+        
