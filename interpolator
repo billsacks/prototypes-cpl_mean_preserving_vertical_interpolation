@@ -62,8 +62,10 @@ class Interpolator(object):
         self._compute_gradients()
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename, multiplier=1):
         """Create an Interpolator object by reading a file
+
+        Field values are multiplied by multiplier
 
         File should be formatted as:
         nelev (int)
@@ -84,7 +86,7 @@ class Interpolator(object):
             nelev = int(f.readline())
             elevclass_bounds = [float(x) for x in f.readline().split()]
             topo = [float(x) for x in f.readline().split()]
-            field = [float(x) for x in f.readline().split()]
+            field = [float(x) * multiplier for x in f.readline().split()]
 
         return cls(elevclass_bounds, topo, field)
 
@@ -195,6 +197,44 @@ class Interpolator(object):
         gradient_str = "Gradients: " + str(self._gradients)
         return field_at_mean_topo_str + "\n" + gradient_str
 
+    def get_mean(self, ec):
+        """Get the mean smb in elevation class ec"""
+
+        if (ec == 0):
+            mean_lower = self._field_at_mean_topo[ec]
+        else:
+            mean_lower = self._field_at_mean_topo[ec] - \
+              self._mean_deviations[ec]*self._gradients[ec-1]
+
+        if (ec == self._nelev-1):
+            mean_upper = self._field_at_mean_topo[ec]
+        else:
+            mean_upper = self._field_at_mean_topo[ec] + \
+              self._mean_deviations[ec]*self._gradients[ec]
+
+        return (mean_lower + mean_upper)/2
+
+    def get_glint_mean(self, ec):
+        """Get the mean smb in elevation class ec if we used glint-style
+        interpolation"""
+
+        if (ec == 0):
+            mean_lower = self._field[ec]
+        else:
+            glint_gradient = (self._field[ec] - self._field[ec-1]) / \
+              (self._topo[ec] - self._topo[ec-1])
+            mean_lower = self._field[ec] - \
+              self._mean_deviations[ec]*glint_gradient
+
+        if (ec == self._nelev-1):
+            mean_upper = self._field[ec]
+        else:
+            glint_gradient = (self._field[ec+1] - self._field[ec]) / \
+              (self._topo[ec+1] - self._topo[ec])
+            mean_upper = self._field[ec] + \
+              self._mean_deviations[ec]*glint_gradient
+
+        return (mean_lower + mean_upper)/2
 
     def draw_figure(self, output_filename):
         """Draw a figure of this gradient info, and save it to
@@ -259,6 +299,25 @@ class Interpolator(object):
         for ec_bound in self._elevclass_bounds[:-1]:
             plt.plot([ec_bound, ec_bound], [y_min, y_max], 'k')
 
+        # Write some statistics
+        # For lower elevation classes, write them above the point; for upper
+        # classes, below the point
+        for ec in range(self._nelev):
+            if (ec < self._nelev/2):
+                yloc = self._field[ec] + y_range/5
+            else:
+                yloc = self._field[ec] - y_range/5
+            num_format = "{:6.3e}"
+            plt.text(self._elevclass_bounds[ec], yloc,
+                     num_format.format(self._field[ec]),
+                     fontsize=6, color='k')
+            plt.text(self._elevclass_bounds[ec], yloc-y_range/20,
+                     num_format.format(self.get_mean(ec)),
+                     fontsize=6, color='b')
+            plt.text(self._elevclass_bounds[ec], yloc-y_range/10,
+                     num_format.format(self.get_glint_mean(ec)),
+                     fontsize=6, color='r')
+
         pylab.legend(loc='best', fontsize='x-small')
         pylab.savefig(output_filename)
         plt.close()
@@ -296,9 +355,8 @@ def commandline_options():
         
 def main(options):
     for input_filename in options.files:
-        file_base = os.path.basename(input_filename)
-        file_base = os.path.splitext(file_base)[0]
-        interp = Interpolator.from_file(input_filename)
+        file_base = os.path.splitext(input_filename)[0]
+        interp = Interpolator.from_file(input_filename, 1e5)
         interp.draw_figure(file_base + '.pdf')
 
 if __name__ == "__main__":
