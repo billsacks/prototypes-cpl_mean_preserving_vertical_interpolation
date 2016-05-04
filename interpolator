@@ -251,7 +251,18 @@ class Interpolator(object):
 
     def draw_figure(self, output_filename):
         """Draw a figure of this gradient info, and save it to
-        output_filename"""
+        output_filename.
+
+        Each figure shows:
+
+        - original SMB in each elevation class (red circles and dashed black lines)
+
+        - this new mean-preserving interpolation (blue lines and blue circles)
+
+        - glint-style interpolation (red lines)
+
+        - mean CISM SMB in each elevation class with each approach (blue & red numbers) 
+        """
 
         field_min = min(self._field)
         field_max = max(self._field)
