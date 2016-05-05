@@ -210,6 +210,18 @@ class Interpolator(object):
         """Get the value in the given elevation class at the given topographic
         height"""
 
+        return self._get_value_generic(ec, topo, self._gradients,
+                                       self._field_at_mean_topo)
+
+    def get_glint_value(self, ec, topo):
+        """Get glint's value in the given elevation class at the given
+        topgraphic height"""
+
+        return self._get_value_generic(ec, topo, self._glint_gradients,
+                                       self._field)
+
+    def _get_value_generic(self, ec, topo, gradients, field):
+
         assert ec >= 0
         assert ec < self._nelev
 
@@ -218,16 +230,15 @@ class Interpolator(object):
             if (ec == 0):
                 gradient = 0
             else:
-                gradient = self._gradients[ec-1]
+                gradient = gradients[ec-1]
         else:
             # In upper half
             if (ec == self._nelev-1):
                 gradient = 0
             else:
-                gradient = self._gradients[ec]
+                gradient = gradients[ec]
 
-        return self._field_at_mean_topo[ec] + \
-          gradient * (topo - self._topo[ec])
+        return field[ec] + gradient * (topo - self._topo[ec])
 
     def get_glint_mean(self, ec):
         """Get the mean smb in elevation class ec if we used glint-style

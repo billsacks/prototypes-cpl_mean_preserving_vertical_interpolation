@@ -50,6 +50,9 @@ def commandline_options():
     parser.add_argument('--map_filename', required=True,
                         help='path to lnd2glc mapping file')
 
+    parser.add_argument('--output_filename', required=True,
+                        help='path to output file')
+
     parser.add_argument('--backtrace', action='store_true',
                         help='show exception backtraces as extra debugging output')
 
@@ -123,6 +126,7 @@ def main(options):
     lnd_pts = np.unique(col)
     cism_shape = g2x_ice.shape
     cism_data = np.zeros(cism_shape)
+    cism_glint_data = np.zeros(cism_shape)
     cism_land_index = np.zeros(cism_shape)
     cism_assigned = np.zeros(cism_shape, dtype=bool)
 
@@ -153,9 +157,11 @@ def main(options):
                     cism_assigned[cism_cell] = True
                     cism_data[cism_cell] = interpolator.get_value(
                         cism_ec[cism_cell], g2x_topo[cism_cell])
+                    cism_glint_data[cism_cell] = interpolator.get_glint_value(
+                        cism_ec[cism_cell], g2x_topo[cism_cell])
 
     # Create netcdf file
-    output_data = Dataset('cism_smb.nc', 'w')
+    output_data = Dataset(options.output_filename, 'w')
     timedim = output_data.createDimension('time', None)
     ydim = output_data.createDimension('y', cism_shape[1])
     xdim = output_data.createDimension('x', cism_shape[2])
@@ -169,6 +175,11 @@ def main(options):
                                               fill_value=1e30)
     cism_smb_var[:] = np.ma.masked_where(np.logical_not(cism_assigned),
                                          cism_data)
+    cism_glint_smb_var = output_data.createVariable('glint_smb', 'f8',
+                                              ('time','y','x'),
+                                              fill_value=1e30)
+    cism_glint_smb_var[:] = np.ma.masked_where(np.logical_not(cism_assigned),
+                                         cism_glint_data)
     output_data.close()
 
 
