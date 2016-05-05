@@ -43,6 +43,9 @@ class Interpolator(object):
 
         self._compute_gradients()
 
+        self._glint_gradients = np.zeros(self._nelev - 1)
+        self._set_glint_gradients()
+
     @classmethod
     def from_file(cls, filename, multiplier=1):
         """Create an Interpolator object by reading a file
@@ -174,6 +177,11 @@ class Interpolator(object):
                 (self._topo[gradient_num+1] - self._topo[gradient_num]))
 
 
+    def _set_glint_gradients(self):
+        for ec in range(self._nelev - 1):
+            self._glint_gradients[ec] = (self._field[ec+1] - self._field[ec]) / \
+              (self._topo[ec+1] - self._topo[ec])
+
     def __str__(self):
         field_at_mean_topo_str = "Values at mean topo: " + str(self._field_at_mean_topo)
         gradient_str = "Gradients: " + str(self._gradients)
@@ -229,19 +237,15 @@ class Interpolator(object):
             mean_lower = self._mean_value_lower(
                 ec, self._field[ec], 0)
         else:
-            glint_gradient = (self._field[ec] - self._field[ec-1]) / \
-              (self._topo[ec] - self._topo[ec-1])
             mean_lower = self._mean_value_lower(
-                ec, self._field[ec], glint_gradient)
+                ec, self._field[ec], self._glint_gradients[ec-1])
 
         if (ec == self._nelev-1):
             mean_upper = self._mean_value_upper(
                 ec, self._field[ec], 0)
         else:
-            glint_gradient = (self._field[ec+1] - self._field[ec]) / \
-              (self._topo[ec+1] - self._topo[ec])
             mean_upper = self._mean_value_upper(
-                ec, self._field[ec], glint_gradient)
+                ec, self._field[ec], self._glint_gradients[ec])
 
         return (mean_lower + mean_upper)/2
 
