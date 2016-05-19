@@ -352,18 +352,18 @@ class Interpolator(object):
                 yloc = self._field[ec] + y_range/5
             else:
                 yloc = self._field[ec] - y_range/5
-            num_format = "{:8.4f}"
+            num_format = "{:6.2f}"
 
             # I have done some spot-checks to confirm that this mean agrees with
             # self._field[ec]; if we implement this for real, we should add some
             # unit tests and/or inline tests to confirm that
             plt.text(self._elevclass_bounds[ec], yloc,
                      num_format.format(self.get_mean(ec)),
-                     fontsize=6, color='b')
+                     fontsize=10, color='b')
 
             plt.text(self._elevclass_bounds[ec], yloc-y_range/20,
                      num_format.format(self.get_glint_mean(ec)),
-                     fontsize=6, color='r')
+                     fontsize=10, color='r')
 
         pylab.legend(loc='best', fontsize='x-small')
         pylab.savefig(output_filename)
