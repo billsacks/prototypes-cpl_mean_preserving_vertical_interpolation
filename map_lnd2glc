@@ -74,7 +74,7 @@ def any_in_wrong_class(topo):
 
 
 def get_elevclass(topo):
-    ec = bisect.bisect_left(ELEVCLASS_BOUNDS, topo)
+    ec = bisect.bisect_left(ELEVCLASS_BOUNDS, topo) - 1
     if (ec < 0):
         ec = 0
     if (ec >= NUM_EC):
@@ -88,6 +88,11 @@ def main(options):
 
     col = mapfile.variables['col'][:]
     row = mapfile.variables['row'][:]
+
+    # transform from 1-indexing to 0-indexing
+    col = col - 1
+    row = row - 1
+
     S = mapfile.variables['S'][:]
     xc_a = mapfile.variables['xc_a'][:]
     yc_a = mapfile.variables['yc_a'][:]
@@ -159,6 +164,17 @@ def main(options):
                                               fill_value=1e30)
     cism_glint_smb_var[:] = np.ma.masked_where(np.logical_not(cism_assigned),
                                          cism_glint_data)
+    cism_ec_var = output_data.createVariable('elevclass', 'f8',
+                                             ('time','y','x'),
+                                             fill_value=1e30)
+    cism_ec_var[:] = np.ma.masked_where(np.logical_not(cism_assigned),
+                                        cism_ec)
+    cism_topo_var = output_data.createVariable('topo', 'f8',
+                                               ('time','y','x'),
+                                               fill_value=1e30)
+    cism_topo_var[:] = np.ma.masked_where(np.logical_not(cism_assigned),
+                                          g2x_topo)
+
     output_data.close()
 
 
